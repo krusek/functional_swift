@@ -38,6 +38,29 @@ class RedBlackTreeInsertionTests: XCTestCase {
         print(tree.toArray())
         XCTAssertTrue(equals(tree.toArray(), [[(Color.black, 0)], [(Color.red, -1), (Color.red, 1)], [(Color.red, -2), nil, nil, (Color.red, 2)]]))
     }
+
+    func testInsertionContainsValues() {
+        let tree = RedBlackTree.create(0).insert(1).insert(2).insert(-1).insert(-2)
+        let array = tree.toArray().flatMap({$0}).compactMap({$0}).map({$0.1}).sorted()
+        XCTAssertEqual(array, [-2, -1, 0, 1, 2])
+    }
+
+    func testOrderingForInsertion() {
+        let tree = RedBlackTree.create(0).insert(1).insert(2).insert(-1).insert(-2)
+        let ordering = assertOrdering(tree, greater: nil, lesser: nil)
+        XCTAssertTrue(ordering)
+    }
+
+    func assertOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: A?) -> Bool {
+        switch tree {
+        case .empty:
+            return true
+        case .tree(_, let lhs, let value, let rhs):
+            if let greater = greater, value > greater { return false }
+            if let lesser = lesser, value <= lesser { return false }
+            return assertOrdering(lhs, greater: value, lesser: nil) && assertOrdering(rhs, greater: nil, lesser: value)
+        }
+    }
 }
 
 func equals<A:Equatable>(_ array1: [[(Color, A)?]], _ array2: [[(Color, A)?]]) -> Bool {
