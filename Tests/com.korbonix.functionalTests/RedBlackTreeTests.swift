@@ -16,8 +16,8 @@ class RedBlackTreeArrayTests: XCTestCase {
     }
 
     func testSingleElement() {
-        let tree = RedBlackTree<Int>.tree(Color.red, .empty, 5, .empty)
-        XCTAssertTrue(equals(tree.toArray(), [[(Color.red, 5)]]))
+        let tree = RedBlackTree<Int>.create(5)
+        XCTAssertTrue(equals(tree.toArray(), [[(Color.black, 5)]]))
     }
 
     func testSimpleTree() {
@@ -29,6 +29,14 @@ class RedBlackTreeArrayTests: XCTestCase {
                                           5,
                                           .tree(Color.black, .empty, 15, .empty))
         XCTAssertTrue(equals(tree.toArray(), [[(Color.red, 5)],[(Color.black, 10), (Color.black, 15)],[(Color.red, 20), nil, nil, nil]]))
+    }
+}
+
+class RedBlackTreeInsertionTests: XCTestCase {
+    func testInsertion() {
+        let tree = RedBlackTree.create(0).insert(1).insert(2).insert(-1).insert(-2)
+        print(tree.toArray())
+        XCTAssertTrue(equals(tree.toArray(), [[(Color.black, 0)], [(Color.red, -1), (Color.red, 1)], [(Color.red, -2), nil, nil, (Color.red, 2)]]))
     }
 }
 

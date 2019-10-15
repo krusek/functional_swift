@@ -11,9 +11,26 @@ public enum Color {
     case red, black
 }
 
-public indirect enum RedBlackTree<A> {
+public indirect enum RedBlackTree<A: Comparable> {
     case empty, tree(Color, RedBlackTree, A, RedBlackTree)
 
+    public static func create(_ element: A) -> RedBlackTree {
+        return .tree(.black, .empty, element, .empty)
+    }
+
+    public func insert(_ element: A) -> RedBlackTree {
+        switch self {
+        case .empty:
+            return .tree(Color.red, .empty, element, .empty)
+        case .tree(let color, let lhs, let value, let rhs) where value > element:
+            return .tree(color, lhs.insert(element), value, rhs)
+        case .tree(let color, let lhs, let value, let rhs):
+            return .tree(color, lhs, value, rhs.insert(element))
+        }
+    }
+}
+
+extension RedBlackTree {
     public func toArray() -> [[(Color, A)?]] {
         guard let head = self.simpleTuple() else { return [] }
         var array: [[(Color, A)?]] = [[head]]
@@ -45,17 +62,6 @@ public indirect enum RedBlackTree<A> {
             return nil
         case .tree(let c, _, let value, _):
             return (c, value)
-        }
-    }
-
-    func children() -> [(Color, A)?] {
-        switch self {
-        case .empty:
-            return []
-        case .tree(_, .empty, _, .empty):
-            return []
-        case .tree(_, let ltree, _, let rtree):
-            return [ltree.simpleTuple(), rtree.simpleTuple()]
         }
     }
 }
