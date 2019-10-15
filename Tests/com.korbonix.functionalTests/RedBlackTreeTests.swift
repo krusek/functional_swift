@@ -17,14 +17,18 @@ class RedBlackTreeArrayTests: XCTestCase {
 
     func testSingleElement() {
         let tree = RedBlackTree<Int>.tree(Color.red, .empty, 5, .empty)
-        print(tree.toArray())
         XCTAssertTrue(equals(tree.toArray(), [[(Color.red, 5)]]))
     }
 
     func testSimpleTree() {
-        let tree = RedBlackTree<Int>.tree(Color.red, .empty, 5, .empty)
-        XCTAssertTrue(equals(tree.toArray(), [[(Color.red, 5)]]))
-
+        let tree = RedBlackTree<Int>.tree(Color.red,
+                                          .tree(Color.black,
+                                                .tree(Color.red, .empty, 20, .empty),
+                                                10,
+                                                .empty),
+                                          5,
+                                          .tree(Color.black, .empty, 15, .empty))
+        XCTAssertTrue(equals(tree.toArray(), [[(Color.red, 5)],[(Color.black, 10), (Color.black, 15)],[(Color.red, 20), nil, nil, nil]]))
     }
 }
 

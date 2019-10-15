@@ -21,6 +21,7 @@ public indirect enum RedBlackTree<A> {
         var next = RedBlackTree.nextItems(harray)
         while next.count > 0 {
             let narray = next.map({ $0.simpleTuple() })
+            if narray.compactMap({$0}).count == 0 { break }
             array.append(narray)
             next = RedBlackTree.nextItems(next)
         }
@@ -31,8 +32,6 @@ public indirect enum RedBlackTree<A> {
         return list.flatMap({ (item) -> [RedBlackTree] in
             switch item {
             case .empty:
-                return []
-            case .tree(_, .empty, _, .empty):
                 return []
             case .tree(_, let lhs, _, let rhs):
                 return [lhs, rhs]
