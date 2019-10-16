@@ -33,12 +33,6 @@ class RedBlackTreeArrayTests: XCTestCase {
 }
 
 class RedBlackTreeInsertionTests: XCTestCase {
-    func testInsertion() {
-        let tree = RedBlackTree.create(0).insert(1).insert(2).insert(-1).insert(-2)
-        print(tree.toArray())
-        XCTAssertTrue(equals(tree.toArray(), [[(Color.black, 0)], [(Color.red, -1), (Color.red, 1)], [(Color.red, -2), nil, nil, (Color.red, 2)]]))
-    }
-
     func testInsertionContainsValues() {
         let tree = RedBlackTree.create(0).insert(1).insert(2).insert(-1).insert(-2)
         let array = tree.toArray().flatMap({$0}).compactMap({$0}).map({$0.1}).sorted()
@@ -47,19 +41,83 @@ class RedBlackTreeInsertionTests: XCTestCase {
 
     func testOrderingForInsertion() {
         let tree = RedBlackTree.create(0).insert(1).insert(2).insert(-1).insert(-2)
-        let ordering = assertOrdering(tree, greater: nil, lesser: nil)
+        let ordering = checkOrdering(tree, greater: nil, lesser: nil)
         XCTAssertTrue(ordering)
     }
 
-    func assertOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: A?) -> Bool {
-        switch tree {
-        case .empty:
-            return true
-        case .tree(_, let lhs, let value, let rhs):
-            if let greater = greater, value > greater { return false }
-            if let lesser = lesser, value <= lesser { return false }
-            return assertOrdering(lhs, greater: value, lesser: nil) && assertOrdering(rhs, greater: nil, lesser: value)
+    func testRedChildrenRule() {
+        let tree = createTree(Array(-30...30).shuffled())
+        let check = checkRedChildrenRule(tree)
+        XCTAssertTrue(check)
+    }
+
+    func testBlackDepthRule() {
+        let tree = createTree(Array(-30...30).shuffled())
+        let check = checkBlackDepthRule(tree)
+        XCTAssertTrue(check.0)
+
+    }
+
+
+}
+
+class RedBlackTreeRemovalTests: XCTestCase {
+    func testRemovesElementRetainingOrder() {
+        let array = Array(-20...20)
+        for ix in -20...20 {
+            let tree = createTree(array)
+            let removed = tree.remove(ix)
+            let array2 = removed.toArray().flatMap({$0}).compactMap({$0}).map({$0.1}).sorted()
+            XCTAssertEqual(array2, array.filter({ $0 != ix }))
         }
+    }
+
+}
+
+func createTree<A: Comparable>(_ array: [A]) -> RedBlackTree<A> {
+    return array.reduce(RedBlackTree<A>.empty) { (tree, a) -> RedBlackTree<A> in
+        return tree.insert(a)
+    }
+}
+
+func checkOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: A?) -> Bool {
+    switch tree {
+    case .empty:
+        return true
+    case .tree(_, let lhs, let value, let rhs):
+        if let greater = greater, value > greater { return false }
+        if let lesser = lesser, value <= lesser { return false }
+        return checkOrdering(lhs, greater: value, lesser: nil) && checkOrdering(rhs, greater: nil, lesser: value)
+    }
+}
+
+func checkBlackDepthRule<A: Comparable>(_ tree: RedBlackTree<A>) -> (Bool, Int) {
+    switch tree {
+    case .empty:
+        return (true, 0)
+    case .tree(let c, let lhs, _, let rhs):
+        let left = checkBlackDepthRule(lhs)
+        guard left.0 else { return left }
+        let right = checkBlackDepthRule(rhs)
+        guard right.0 else { return right }
+        guard left == right else { return (false, -1) }
+        if c == .black {
+            return (true, left.1 + 1)
+        } else {
+            return left
+        }
+    }
+}
+
+func checkRedChildrenRule<A: Comparable>(_ tree: RedBlackTree<A>) -> Bool {
+    switch tree {
+    case .empty:
+        return true
+    case .tree(.red, .tree(.red, _, _, _), _, _),
+         .tree(.red, _, _, .tree(.red, _, _, _)):
+        return false
+    case .tree(_, let lhs, _, let rhs):
+        return checkRedChildrenRule(lhs) && checkRedChildrenRule(rhs)
     }
 }
 
