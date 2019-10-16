@@ -8,11 +8,11 @@
 import Foundation
 
 public enum Color {
-    case red, black
+    case red, black, doubleBlack, negativeBlack
 }
 
 public indirect enum RedBlackTree<A: Comparable> {
-    case empty, tree(Color, RedBlackTree, A, RedBlackTree)
+    case empty, doubleEmpty, tree(Color, RedBlackTree, A, RedBlackTree)
 
     public static func create(_ element: A) -> RedBlackTree {
         return .tree(.black, .empty, element, .empty)
@@ -22,8 +22,8 @@ public indirect enum RedBlackTree<A: Comparable> {
 extension RedBlackTree {
     public func remove(_ element: A) -> RedBlackTree {
         switch self {
-        case .empty:
-            return .empty
+        case .empty, .doubleEmpty:
+            return self
         case .tree(let c, let left, let x, let right) where x == element:
             guard let mx = right.max() else {
                 return left
@@ -38,7 +38,7 @@ extension RedBlackTree {
 
     private func max() -> A? {
         switch self {
-        case .empty:
+        case .empty, .doubleEmpty:
             return nil
         case .tree(_, _, let a, .empty):
             return a
@@ -67,7 +67,7 @@ extension RedBlackTree {
 
     private func insertDeep(_ element: A) -> RedBlackTree {
         switch self {
-        case .empty:
+        case .empty, .doubleEmpty:
             return .tree(Color.red, .empty, element, .empty)
         case .tree(let color, let lhs, let value, let rhs) where value > element:
             return .tree(color, lhs.insertDeep(element).balance(), value, rhs)
@@ -109,7 +109,7 @@ extension RedBlackTree {
     static private func nextItems(_ list: [RedBlackTree]) -> [RedBlackTree] {
         return list.flatMap({ (item) -> [RedBlackTree] in
             switch item {
-            case .empty:
+            case .empty, .doubleEmpty:
                 return []
             case .tree(_, let lhs, _, let rhs):
                 return [lhs, rhs]
@@ -119,7 +119,7 @@ extension RedBlackTree {
 
     func simpleTuple() -> (Color, A)? {
         switch self {
-        case .empty:
+        case .empty, .doubleEmpty:
             return nil
         case .tree(let c, _, let value, _):
             return (c, value)

@@ -82,7 +82,7 @@ func createTree<A: Comparable>(_ array: [A]) -> RedBlackTree<A> {
 
 func checkOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: A?) -> Bool {
     switch tree {
-    case .empty:
+    case .empty, .doubleEmpty:
         return true
     case .tree(_, let lhs, let value, let rhs):
         if let greater = greater, value > greater { return false }
@@ -93,7 +93,7 @@ func checkOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: 
 
 func checkBlackDepthRule<A: Comparable>(_ tree: RedBlackTree<A>) -> (Bool, Int) {
     switch tree {
-    case .empty:
+    case .empty, .doubleEmpty:
         return (true, 0)
     case .tree(let c, let lhs, _, let rhs):
         let left = checkBlackDepthRule(lhs)
@@ -111,7 +111,7 @@ func checkBlackDepthRule<A: Comparable>(_ tree: RedBlackTree<A>) -> (Bool, Int) 
 
 func checkRedChildrenRule<A: Comparable>(_ tree: RedBlackTree<A>) -> Bool {
     switch tree {
-    case .empty:
+    case .empty, .doubleEmpty:
         return true
     case .tree(.red, .tree(.red, _, _, _), _, _),
          .tree(.red, _, _, .tree(.red, _, _, _)):
