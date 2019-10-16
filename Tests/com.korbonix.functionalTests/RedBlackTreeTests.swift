@@ -62,13 +62,23 @@ class RedBlackTreeInsertionTests: XCTestCase {
 }
 
 class RedBlackTreeRemovalTests: XCTestCase {
-    func testRemovesElementRetainingOrder() {
+    func testRemovesElement() {
         let array = Array(-20...20)
         for ix in -20...20 {
             let tree = createTree(array)
             let removed = tree.remove(ix)
             let array2 = removed.toArray().flatMap({$0}).compactMap({$0}).map({$0.1}).sorted()
             XCTAssertEqual(array2, array.filter({ $0 != ix }))
+        }
+    }
+    
+    func testRemovesElementRetainingOrder() {
+        let array = Array(-20...20)
+        for ix in -20...20 {
+            let tree = createTree(array)
+            let removed = tree.remove(ix)
+            let ordered = checkOrdering(removed, greater: nil, lesser: nil)
+            XCTAssertTrue(ordered)
         }
     }
 

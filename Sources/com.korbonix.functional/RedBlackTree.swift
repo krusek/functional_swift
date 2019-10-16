@@ -25,7 +25,7 @@ extension RedBlackTree {
         case .empty, .doubleEmpty:
             return self
         case .tree(let c, let left, let x, let right) where x == element:
-            guard let mx = right.max() else {
+            guard let mx = right.min() else {
                 return left
             }
             return .tree(c, left, mx, right.remove(mx))
@@ -36,14 +36,14 @@ extension RedBlackTree {
         }
     }
 
-    private func max() -> A? {
+    private func min() -> A? {
         switch self {
         case .empty, .doubleEmpty:
             return nil
-        case .tree(_, _, let a, .empty):
+        case .tree(_, .empty, let a, _):
             return a
-        case .tree(_, _, _, let right):
-            return right.max()
+        case .tree(_, let left, _, _):
+            return left.min()
         }
     }
 }
