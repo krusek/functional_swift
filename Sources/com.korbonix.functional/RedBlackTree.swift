@@ -26,7 +26,7 @@ extension RedBlackTree {
             return self
         case .tree(let c, let left, let x, let right) where x == element:
             guard let mx = right.min() else {
-                return left
+                return left.blacken()
             }
             return .tree(c, left, mx, right.remove(mx))
         case .tree(let c, let left, let x, let right) where x < element:
@@ -44,6 +44,26 @@ extension RedBlackTree {
             return a
         case .tree(_, let left, _, _):
             return left.min()
+        }
+    }
+
+    private func blacken() -> RedBlackTree {
+        switch self {
+        case .empty, .doubleEmpty:
+            return .doubleEmpty
+        case .tree(let color, let left, let a, let right):
+            return .tree(blacken(color: color), left, a, right)
+        }
+    }
+
+    private func blacken(color: Color) -> Color {
+        switch color {
+        case .negativeBlack:
+            return .red
+        case .red:
+            return .black
+        case .black, .doubleBlack:
+            return .doubleBlack
         }
     }
 }

@@ -71,7 +71,7 @@ class RedBlackTreeRemovalTests: XCTestCase {
             XCTAssertEqual(array2, array.filter({ $0 != ix }))
         }
     }
-    
+
     func testRemovesElementRetainingOrder() {
         let array = Array(-20...20)
         for ix in -20...20 {
@@ -79,6 +79,26 @@ class RedBlackTreeRemovalTests: XCTestCase {
             let removed = tree.remove(ix)
             let ordered = checkOrdering(removed, greater: nil, lesser: nil)
             XCTAssertTrue(ordered)
+        }
+    }
+
+    func testRemoveRetainsBlackDepthRule() {
+        let array = Array(-20...20)
+        for ix in -20...20 {
+            let tree = createTree(array)
+            let removed = tree.remove(ix)
+            let blackRule = checkBlackDepthRule(removed)
+            XCTAssertTrue(blackRule.0)
+        }
+    }
+
+    func testRemoveRetainsRedRule() {
+        let array = Array(-20...20)
+        for ix in -20...20 {
+            let tree = createTree(array)
+            let removed = tree.remove(ix)
+            let redRule = checkRedChildrenRule(removed)
+            XCTAssertTrue(redRule)
         }
     }
 
@@ -103,18 +123,25 @@ func checkOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: 
 
 func checkBlackDepthRule<A: Comparable>(_ tree: RedBlackTree<A>) -> (Bool, Int) {
     switch tree {
-    case .empty, .doubleEmpty:
+    case .empty:
         return (true, 0)
+    case .doubleEmpty:
+        return (true, 1)
     case .tree(let c, let lhs, _, let rhs):
         let left = checkBlackDepthRule(lhs)
         guard left.0 else { return left }
         let right = checkBlackDepthRule(rhs)
         guard right.0 else { return right }
         guard left == right else { return (false, -1) }
-        if c == .black {
+        switch c {
+        case .black:
             return (true, left.1 + 1)
-        } else {
-            return left
+        case .doubleBlack:
+            return (true, left.1 + 2)
+        case .red:
+            return (true, left.1)
+        case .negativeBlack:
+            return (true, left.1 - 1)
         }
     }
 }
