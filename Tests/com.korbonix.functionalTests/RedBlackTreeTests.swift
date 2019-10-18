@@ -62,6 +62,17 @@ class RedBlackTreeInsertionTests: XCTestCase {
 }
 
 class RedBlackTreeRemovalTests: XCTestCase {
+    func testRemoveUnknownElement() {
+        let range = -20...20
+        let array = Array(range)
+        for ix in [-200, -21, 21, 200] {
+            let tree = createTree(array)
+            let removed = tree
+            let array2 = removed.toArray().flatMap({$0}).compactMap({$0}).map({$0.1}).sorted()
+            XCTAssertEqual(array2, array.filter({ $0 != ix }), "Error removing: \(ix)")
+        }
+    }
+
     func testRemovesElement() {
         let range = -20...20
         let array = Array(range)

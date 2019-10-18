@@ -21,10 +21,16 @@ public indirect enum RedBlackTree<A: Comparable> {
 
 extension RedBlackTree {
     public func remove(_ element: A) -> RedBlackTree {
-        return self.delete(element).blacken()
+        return self.delete(element).makeBlack()
     }
 
-    func delete(_ element: A) -> RedBlackTree {
+    /// This deletes a node by first finding the node in question and then
+    /// changing its value to the next smaller value. It then rebalances the
+    /// red/black rules from the bottom up.
+    ///
+    /// - Parameter element: The element to be removed
+    /// - Returns: A balanced tree without the given element.
+    private func delete(_ element: A) -> RedBlackTree {
         switch self {
         case .empty, .doubleEmpty:
             return self
@@ -50,37 +56,6 @@ extension RedBlackTree {
             return right.max()
         }
     }
-
-    private func blacken() -> RedBlackTree {
-        switch self {
-        case .empty, .doubleEmpty:
-            return .empty
-        case .tree(.red, let lhs, let a, let rhs):
-            return .tree(.black, lhs, a, rhs)
-        default:
-            return self
-        }
-    }
-
-    private func blacker() -> RedBlackTree {
-        switch self {
-        case .empty, .doubleEmpty:
-            return .doubleEmpty
-        case .tree(let color, let left, let a, let right):
-            return .tree(blacker(color: color), left, a, right)
-        }
-    }
-
-    private func blacker(color: Color) -> Color {
-        switch color {
-        case .negativeBlack:
-            return .red
-        case .red:
-            return .black
-        case .black, .doubleBlack:
-            return .doubleBlack
-        }
-    }
 }
 
 extension RedBlackTree {
@@ -89,7 +64,7 @@ extension RedBlackTree {
         case .empty:
             return .tree(.black, .empty, element, .empty)
         default:
-            return self.insertDeep(element).balanced().blacken()
+            return self.insertDeep(element).balanced().makeBlack()
         }
     }
 
@@ -104,6 +79,67 @@ extension RedBlackTree {
         }
     }
 
+    /// This method balances the tree -- removing red - red violations as well as removing the
+    /// double blacks that can be easily removed. The red - red violations are easy as they
+    /// require a simple rebalancing such that the parent is red and the two immediate children
+    /// are black instead.
+    ///
+    /// It also fixes double black trees with red - red violations by doing a similar balancing as
+    /// above but where the parent is black instead of read.
+    ///
+    /// Finally it fixes doubleblack trees with negative black children by replacing both nodes
+    /// with regular black nodes.
+    ///
+    /// NOTE: This could be broken into three methods to more easily illucidate the logic and allow
+    /// better method naming. It could also be broken down such that only the balancing applying
+    /// to left trees are together and balancing for right trees are together.
+    ///
+    /// - Returns: A balanced tree when called recursively from the bottom.
+    private func balanced() -> RedBlackTree {
+        switch self {
+        case .empty:
+            return self
+            // Standard balancing
+        case .tree(.black, let a, let x, .tree(.red, let b, let y, .tree(.red, let c, let z, let d))),
+             .tree(.black, let a, let x, .tree(.red, .tree(.red, let b, let y, let c), let z, let d)),
+             .tree(.black, .tree(.red, .tree(.red, let a, let x, let b), let y, let c), let z, let d),
+             .tree(.black, .tree(.red, let a, let x, .tree(.red, let b, let y, let c)), let z, let d):
+            return .tree(.red, .tree(.black, a, x, b), y, .tree(.black, c, z, d))
+            // Double black balancing when easy.
+        case .tree(.doubleBlack, let a, let x, .tree(.red, let b, let y, .tree(.red, let c, let z, let d))),
+             .tree(.doubleBlack, let a, let x, .tree(.red, .tree(.red, let b, let y, let c), let z, let d)),
+             .tree(.doubleBlack, .tree(.red, .tree(.red, let a, let x, let b), let y, let c), let z, let d),
+             .tree(.doubleBlack, .tree(.red, let a, let x, .tree(.red, let b, let y, let c)), let z, let d):
+            return .tree(.black, .tree(.black, a, x, b), y, .tree(.black, c, z, d))
+            // Double black / negative black balancing
+        case .tree(.doubleBlack, let a, let x, .tree(.negativeBlack, .tree(.black, let b, let y, let c), let z, let d)) where d.isBlackTree:
+            return .tree(.black, .tree(.black, a, x, b), y, RedBlackTree.tree(.black, c, z, d.makeRed()).balanced())
+        case .tree(.doubleBlack, .tree(.negativeBlack, let a, let x, .tree(.black, let b, let y, let c)), let z, let d) where a.isBlackTree:
+            return .tree(.black, RedBlackTree.tree(.black, a.makeRed(), x, b).balanced(), y, .tree(.black, c, z, d))
+        default:
+            return self
+        }
+    }
+
+    /// Bubbles the double black state upwardsin the tree. That is, if a child is double black
+    /// it will blacken the parent and make the children redder. It follows the bubbling with
+    /// balancing to make sure that introducing the red nodes doesn't break the double red rule.
+    /// If this is called recursively from the bottom, then the new double black node will bubble
+    /// to the top. When it makes its way to the top then it can be replaced with a black node.
+    ///
+    /// - Returns: A tree with at most one double black node when called recursively from the bottom.
+    private func bubbled() -> RedBlackTree {
+        switch self {
+        case .tree(let c, let l, let a, let r) where l.isDoubleBlack || r.isDoubleBlack:
+            return RedBlackTree.tree(blacker(color: c), l.redder(), a, r.redder()).balanced()
+        default:
+            return self.balanced()
+        }
+    }
+}
+
+//MARK: Color changing and checking
+extension RedBlackTree {
     private var isBlackTree: Bool {
         switch self {
         case .tree(.black, _, _, _):
@@ -123,7 +159,7 @@ extension RedBlackTree {
         }
     }
 
-    private func redden() -> RedBlackTree {
+    private func makeRed() -> RedBlackTree {
         switch  self {
         case .tree(_, let x, let a, let y):
             return .tree(.red, x, a, y)
@@ -156,40 +192,37 @@ extension RedBlackTree {
         }
     }
 
-    private func balanced() -> RedBlackTree {
+    private func makeBlack() -> RedBlackTree {
         switch self {
-        case .empty:
-            return self
-            // Standard balancing
-        case .tree(.black, let a, let x, .tree(.red, let b, let y, .tree(.red, let c, let z, let d))),
-             .tree(.black, let a, let x, .tree(.red, .tree(.red, let b, let y, let c), let z, let d)),
-             .tree(.black, .tree(.red, .tree(.red, let a, let x, let b), let y, let c), let z, let d),
-             .tree(.black, .tree(.red, let a, let x, .tree(.red, let b, let y, let c)), let z, let d):
-            return .tree(.red, .tree(.black, a, x, b), y, .tree(.black, c, z, d))
-            // Double black balancing when easy.
-        case .tree(.doubleBlack, let a, let x, .tree(.red, let b, let y, .tree(.red, let c, let z, let d))),
-             .tree(.doubleBlack, let a, let x, .tree(.red, .tree(.red, let b, let y, let c), let z, let d)),
-             .tree(.doubleBlack, .tree(.red, .tree(.red, let a, let x, let b), let y, let c), let z, let d),
-             .tree(.doubleBlack, .tree(.red, let a, let x, .tree(.red, let b, let y, let c)), let z, let d):
-            return .tree(.black, .tree(.black, a, x, b), y, .tree(.black, c, z, d))
-            // Double black / negative black balancing
-        case .tree(.doubleBlack, let a, let x, .tree(.negativeBlack, .tree(.black, let b, let y, let c), let z, let d)) where d.isBlackTree:
-            return .tree(.black, .tree(.black, a, x, b), y, RedBlackTree.tree(.black, c, z, d.redden()).balanced())
-        case .tree(.doubleBlack, .tree(.negativeBlack, let a, let x, .tree(.black, let b, let y, let c)), let z, let d) where a.isBlackTree:
-            return .tree(.black, RedBlackTree.tree(.black, a.redden(), x, b).balanced(), y, .tree(.black, c, z, d))
+        case .empty, .doubleEmpty:
+            return .empty
+        case .tree(.red, let lhs, let a, let rhs):
+            return .tree(.black, lhs, a, rhs)
         default:
             return self
         }
     }
 
-    private func bubbled() -> RedBlackTree {
+    private func blacker() -> RedBlackTree {
         switch self {
-        case .tree(let c, let l, let a, let r) where l.isDoubleBlack || r.isDoubleBlack:
-            return RedBlackTree.tree(blacker(color: c), l.redder(), a, r.redder()).balanced()
-        default:
-            return self.balanced()
+        case .empty, .doubleEmpty:
+            return .doubleEmpty
+        case .tree(let color, let left, let a, let right):
+            return .tree(blacker(color: color), left, a, right)
         }
     }
+
+    private func blacker(color: Color) -> Color {
+        switch color {
+        case .negativeBlack:
+            return .red
+        case .red:
+            return .black
+        case .black, .doubleBlack:
+            return .doubleBlack
+        }
+    }
+
 }
 
 extension RedBlackTree {
@@ -218,7 +251,7 @@ extension RedBlackTree {
         })
     }
 
-    func simpleTuple() -> (Color, A)? {
+    private func simpleTuple() -> (Color, A)? {
         switch self {
         case .empty, .doubleEmpty:
             return nil
