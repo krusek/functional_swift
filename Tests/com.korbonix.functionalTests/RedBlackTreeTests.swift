@@ -63,12 +63,13 @@ class RedBlackTreeInsertionTests: XCTestCase {
 
 class RedBlackTreeRemovalTests: XCTestCase {
     func testRemovesElement() {
-        let array = Array(-20...20)
-        for ix in -20...20 {
+        let range = -20...20
+        let array = Array(range)
+        for ix in range {
             let tree = createTree(array)
             let removed = tree.remove(ix)
             let array2 = removed.toArray().flatMap({$0}).compactMap({$0}).map({$0.1}).sorted()
-            XCTAssertEqual(array2, array.filter({ $0 != ix }))
+            XCTAssertEqual(array2, array.filter({ $0 != ix }), "Error removing: \(ix)")
         }
     }
 
@@ -83,12 +84,13 @@ class RedBlackTreeRemovalTests: XCTestCase {
     }
 
     func testRemoveRetainsBlackDepthRule() {
-        let array = Array(-20...20)
-        for ix in -20...20 {
+        let range = -20...20
+        let array = Array(range)
+        for ix in range {
             let tree = createTree(array)
             let removed = tree.remove(ix)
             let blackRule = checkBlackDepthRule(removed)
-            XCTAssertTrue(blackRule.0)
+            XCTAssertTrue(blackRule.0, "failed for: \(ix)")
         }
     }
 
@@ -102,11 +104,53 @@ class RedBlackTreeRemovalTests: XCTestCase {
         }
     }
 
+    func testRemoveFixesAllBadColors() {
+        let range = -20...20
+        let array = Array(range)
+        for ix in range {
+            let tree = createTree(array)
+            let removed = tree.remove(ix)
+            print(removed.toArray())
+            let coloringsRule = checkValidColorings(removed)
+            XCTAssertTrue(coloringsRule, "bad colorings for: \(ix)")
+        }
+    }
+
+    func testRemoveAllElements() {
+        let range = -20...20
+        let array = Array(range)
+        var tree = createTree(array)
+        for ix in range {
+            tree = tree.remove(ix)
+        }
+
+        switch tree {
+        case .empty:
+            break
+        default:
+            XCTFail("Incorrectly removed everything")
+        }
+    }
 }
 
 func createTree<A: Comparable>(_ array: [A]) -> RedBlackTree<A> {
     return array.reduce(RedBlackTree<A>.empty) { (tree, a) -> RedBlackTree<A> in
         return tree.insert(a)
+    }
+}
+
+func checkValidColorings<A: Comparable>(_ tree: RedBlackTree<A>) -> Bool {
+    switch tree {
+    case .empty:
+        return true
+    case .doubleEmpty:
+        print("incorrect double black")
+        return false
+    case .tree(.doubleBlack, _, _, _),
+         .tree(.negativeBlack, _, _, _):
+        return false
+    case .tree(_, let lhs, _, let rhs):
+        return checkValidColorings(lhs) && checkValidColorings(rhs)
     }
 }
 
@@ -124,15 +168,17 @@ func checkOrdering<A: Comparable>(_ tree: RedBlackTree<A>, greater: A?, lesser: 
 func checkBlackDepthRule<A: Comparable>(_ tree: RedBlackTree<A>) -> (Bool, Int) {
     switch tree {
     case .empty:
-        return (true, 0)
-    case .doubleEmpty:
         return (true, 1)
+    case .doubleEmpty:
+        return (true, 2)
     case .tree(let c, let lhs, _, let rhs):
         let left = checkBlackDepthRule(lhs)
         guard left.0 else { return left }
         let right = checkBlackDepthRule(rhs)
         guard right.0 else { return right }
-        guard left == right else { return (false, -1) }
+        guard left == right else {
+            return (false, -1)
+        }
         switch c {
         case .black:
             return (true, left.1 + 1)
