@@ -33,5 +33,4 @@ class QuantumOperatorsTests: XCTestCase {
         print(xo * v)
         print(ii * v)
     }
-
 }
