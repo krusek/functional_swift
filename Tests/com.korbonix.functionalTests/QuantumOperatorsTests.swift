@@ -11,15 +11,59 @@ import com_korbonix_functional
 class QuantumOperatorsTests: XCTestCase {
 
     func testExample() {
-        print(QuantumOperator.X)
-        print("")
-        print(QuantumOperator.Z)
-        print("")
-        print(QuantumOperator.I)
-        print("")
-        print(QuantumOperator.X * QuantumOperator.Z)
-        print("")
-        print(QuantumOperator.X * QuantumOperator.Z * QuantumOperator.X)
+        let X = """
+        |0.0 1.0|
+        |1.0 0.0|
+        """
+        assertEquivalent(QuantumOperator.X, X)
+
+        let Z = """
+        | 1.0  0.0|
+        | 0.0 -1.0|
+        """
+        assertEquivalent(QuantumOperator.Z, Z)
+
+        let I = """
+        |1.0 0.0|
+        |0.0 1.0|
+        """
+        assertEquivalent(QuantumOperator.I, I)
+
+        let XZ = """
+        | 0.0  0.0  1.0  0.0|
+        | 0.0  0.0  0.0 -1.0|
+        | 1.0  0.0  0.0  0.0|
+        | 0.0 -1.0  0.0  0.0|
+        """
+        assertEquivalent(QuantumOperator.X * QuantumOperator.Z, XZ)
+
+        let XZX = """
+        | 0.0  0.0  0.0  0.0  0.0  1.0  0.0  0.0|
+        | 0.0  0.0  0.0  0.0  1.0  0.0  0.0  0.0|
+        | 0.0  0.0  0.0  0.0  0.0  0.0  0.0 -1.0|
+        | 0.0  0.0  0.0  0.0  0.0  0.0 -1.0  0.0|
+        | 0.0  1.0  0.0  0.0  0.0  0.0  0.0  0.0|
+        | 1.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0|
+        | 0.0  0.0  0.0 -1.0  0.0  0.0  0.0  0.0|
+        | 0.0  0.0 -1.0  0.0  0.0  0.0  0.0  0.0|
+        """
+        assertEquivalent(QuantumOperator.X * QuantumOperator.Z * QuantumOperator.X, XZX)
+
+        let IIX = """
+        |0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0|
+        |1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0|
+        |0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0|
+        |0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0|
+        |0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0|
+        |0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0|
+        |0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0|
+        |0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0|
+        """
+        assertEquivalent((QuantumOperator.I * QuantumOperator.I * QuantumOperator.X), IIX)
+    }
+
+    func assertEquivalent(_ quantum: QuantumOperator, _ expected: String, _ message: String = "") {
+        XCTAssertEqual(quantum.description, expected, message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
     }
 
     func testExample2() {

@@ -186,8 +186,14 @@ public func *(lhs: QuantumOperator, rhs: QuantumOperator) -> QuantumOperator {
     case let (.single(i, a, b, c, d), .single(_, _, _, _, _)),
          let (.single(i, a, b, c, d), .diagonal(_, _)):
         return .single(2*i, a * rhs, b * rhs, c * rhs, d * rhs)
-    case let (.diagonal(i, a), .single(_, _, _, _, _)):
+    case let (.diagonal(i, a), .single(j, _, _, _, _)) where i == j:
         return .single(2*i, a * rhs, 0.0 * rhs, 0.0 * rhs, a * rhs)
+    case let (.diagonal(i, a), .single(j, _, _, _, _)) where i > j:
+        return .single(2*i, .diagonal(i / 2, a) * rhs, .diagonal(i / 2, 0.0) * rhs, .diagonal(i / 2, 0.0) * rhs, .diagonal(i / 2, a) * rhs)
+    case (.diagonal(_, _), .single(_, _, _, _, _)):
+        assert(false)
+
+
     }
 }
 
